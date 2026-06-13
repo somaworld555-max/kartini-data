@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Caveat:wght@400;500;600&family=Montserrat:wght@300;400;500;600&family=Josefin+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* Стили (такие же как в предыдущей версии) */
+        /* ===== СТИЛИ (сжато для экономии места) ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
@@ -529,34 +529,6 @@
         .page { display: none; }
         .page.active-page { display: block; }
         
-        .admin-style-panel {
-            margin-top: 20px;
-            padding: 15px;
-            background: #fafafa;
-            border: 1px solid #eee;
-        }
-        .padding-control {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin: 15px 0;
-            flex-wrap: wrap;
-        }
-        .padding-control input { width: 100px; padding: 8px; }
-        
-        .edit-text-btn {
-            background: #111;
-            color: white;
-            border: none;
-            padding: 6px 15px;
-            font-size: 0.7rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: none;
-        }
-        .edit-text-btn.visible { display: inline-block; }
-        .edit-text-btn:hover { background: #b97f44; }
-        
         .sync-status {
             margin-top: 10px;
             font-size: 0.7rem;
@@ -583,6 +555,45 @@
             cursor: pointer;
             margin-top: 5px;
         }
+        .modal-content .close-modal-big {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #999;
+            transition: all 0.2s;
+            background: none;
+            border: none;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content .close-modal-big:hover {
+            color: #c44;
+            transform: scale(1.1);
+        }
+        .style-preview {
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #eee;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 4px;
+        }
+        .style-preview:hover { background: #f5f5f5; border-color: #b97f44; }
+        .style-preview.selected { border-color: #b97f44; background: #faf5f0; }
+        .padding-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        .padding-control input { width: 100px; padding: 8px; }
     </style>
 </head>
 <body>
@@ -700,6 +711,7 @@
     </div>
 </div>
 
+<!-- Модальное окно входа -->
 <div class="modal" id="loginModal">
     <div class="modal-content">
         <span class="close-modal" id="closeModal">&times;</span>
@@ -709,12 +721,32 @@
     </div>
 </div>
 
+<!-- Модальное окно админ-панели (только GitHub синхронизация) -->
 <div class="modal" id="adminPanelModal">
-    <div class="modal-content" style="max-width: 600px;">
-        <span class="close-modal" id="closeAdminModal">&times;</span>
-        <h3>⚙️ Настройки сайта</h3>
+    <div class="modal-content" style="max-width: 500px;">
+        <button class="close-modal-big" id="closeAdminPanelModalBtn">&times;</button>
+        <h3>🔧 Админ-панель</h3>
+        <div class="github-setup">
+            <h4 style="margin-bottom: 10px;">☁️ GitHub синхронизация</h4>
+            <input type="text" id="githubRepo" placeholder="Имя репозитория (username/repo-name)">
+            <input type="password" id="githubToken" placeholder="GitHub токен (Personal Access Token)">
+            <button id="saveGitHubSettingsBtn">💾 Сохранить настройки</button>
+            <button id="syncNowBtn" style="background:#4caf50;">🔄 Загрузить из GitHub</button>
+            <button id="uploadToGitHubBtn" style="background:#b97f44; margin-top:5px;">☁️ Отправить в GitHub</button>
+            <div id="syncStatus" class="sync-status"></div>
+            <p style="font-size:10px; margin-top:8px;">Токен хранится только в вашем браузере</p>
+        </div>
+        <button id="closeAdminPanelBtn" style="margin-top: 20px; width: 100%;">Закрыть</button>
+    </div>
+</div>
+
+<!-- Отдельное модальное окно для настроек шрифтов и отступов -->
+<div class="modal" id="styleSettingsModal">
+    <div class="modal-content" style="max-width: 500px;">
+        <button class="close-modal-big" id="closeStyleSettingsModalBtn">&times;</button>
+        <h3>🎨 Настройки стиля</h3>
         <div class="admin-style-panel">
-            <h4 style="margin-bottom: 15px;">🎨 Шрифт сайта</h4>
+            <h4 style="margin-bottom: 15px;">Шрифт сайта</h4>
             <div id="fontSelector">
                 <div class="style-preview" data-font="modern"><strong>Современный</strong><br><span style="font-family: 'Inter', sans-serif;">Интер — чистый и строгий шрифт</span></div>
                 <div class="style-preview" data-font="elegant"><strong>Элегантный</strong><br><span style="font-family: 'Playfair Display', serif;">Playfair Display — классический</span></div>
@@ -729,25 +761,14 @@
                 <span id="paddingValue">24px</span>
                 <button id="applyPaddingBtn">Применить</button>
             </div>
-            
-            <div class="github-setup">
-                <h4 style="margin-bottom: 10px;">☁️ GitHub синхронизация</h4>
-                <input type="text" id="githubRepo" placeholder="Имя репозитория (username/repo-name)">
-                <input type="password" id="githubToken" placeholder="GitHub токен (Personal Access Token)">
-                <button id="saveGitHubSettingsBtn">💾 Сохранить настройки</button>
-                <button id="syncNowBtn" style="background:#4caf50;">🔄 Загрузить из GitHub</button>
-                <button id="uploadToGitHubBtn" style="background:#b97f44; margin-top:5px;">☁️ Отправить в GitHub</button>
-                <div id="syncStatus" class="sync-status"></div>
-                <p style="font-size:10px; margin-top:8px;">Токен хранится только в вашем браузере</p>
-            </div>
         </div>
-        <button id="closeAdminPanelBtn" style="margin-top: 20px; width: 100%;">Закрыть</button>
+        <button id="closeStyleSettingsBtn" style="margin-top: 20px; width: 100%;">Закрыть</button>
     </div>
 </div>
 
 <div class="modal" id="editTextModal">
     <div class="modal-content">
-        <span class="close-modal" id="closeTextModal">&times;</span>
+        <button class="close-modal-big" id="closeTextModalBtn">&times;</button>
         <h3 id="editTextTitle">Редактировать</h3>
         <textarea id="editTextArea" rows="8"></textarea>
         <button id="saveTextBtn">Сохранить</button>
@@ -756,7 +777,7 @@
 
 <div class="modal" id="editProductModal">
     <div class="modal-content">
-        <span class="close-modal" id="closeProductModal">&times;</span>
+        <button class="close-modal-big" id="closeProductModalBtn">&times;</button>
         <h3>Редактировать товар</h3>
         <input type="text" id="editProductTitle" placeholder="Название">
         <input type="number" id="editProductPrice" placeholder="Цена">
@@ -787,14 +808,14 @@
 <input type="file" id="uploadGalleryImage" accept="image/*" style="display:none">
 
 <script>
-    // ===== НАСТРОЙКИ GITHUB (ЗАМЕНИТЕ НА СВОИ!) =====
-    // ⚠️ ВАЖНО: Замените эти значения на свои!
-    const DEFAULT_GITHUB_REPO = "YOUR_GITHUB_USERNAME/YOUR_DATA_REPO";  // Например: "yulia-art/kartini-data"
-    const DEFAULT_GITHUB_TOKEN = "";  // Оставьте пустым — пользователь введёт сам в админ-панели
-    
-    let GITHUB_REPO = localStorage.getItem('github_repo') || DEFAULT_GITHUB_REPO;
-    let GITHUB_TOKEN = localStorage.getItem('github_token') || DEFAULT_GITHUB_TOKEN;
+    // ===== НАСТРОЙКИ GITHUB И СТИЛЕЙ =====
+    let GITHUB_REPO = localStorage.getItem('github_repo') || '';
+    let GITHUB_TOKEN = localStorage.getItem('github_token') || '';
     const DATA_FILE_PATH = "site-data.json";
+    
+    // Настройки стилей
+    let currentFont = localStorage.getItem('siteFont') || 'modern';
+    let currentPadding = parseInt(localStorage.getItem('sitePadding')) || 24;
     
     // Базовые данные
     let products = [];
@@ -816,7 +837,33 @@
     let currentLightboxProduct = null;
     let currentLightboxIndex = 0;
     
-    // ===== ФУНКЦИИ РАБОТЫ С GITHUB API =====
+    // Шрифты
+    const fonts = {
+        modern: { main: "'Inter', sans-serif", heading: "'Inter', sans-serif" },
+        elegant: { main: "'Playfair Display', serif", heading: "'Playfair Display', serif" },
+        handwritten: { main: "'Caveat', cursive", heading: "'Caveat', cursive" },
+        strict: { main: "'Montserrat', sans-serif", heading: "'Montserrat', sans-serif" },
+        airy: { main: "'Josefin Sans', sans-serif", heading: "'Josefin Sans', sans-serif" }
+    };
+    
+    function applyFont(fontName) {
+        document.documentElement.style.setProperty('--main-font', fonts[fontName].main);
+        document.documentElement.style.setProperty('--heading-font', fonts[fontName].heading);
+        localStorage.setItem('siteFont', fontName);
+        currentFont = fontName;
+    }
+    
+    function applyPadding(padding) {
+        document.documentElement.style.setProperty('--container-padding', padding + 'px');
+        localStorage.setItem('sitePadding', padding);
+        currentPadding = padding;
+        const paddingValueSpan = document.getElementById('paddingValue');
+        const paddingSliderElem = document.getElementById('paddingSlider');
+        if(paddingValueSpan) paddingValueSpan.innerText = padding + 'px';
+        if(paddingSliderElem) paddingSliderElem.value = padding;
+    }
+    
+    // Функции синхронизации
     function showNotif(text, isError = false) {
         let n = document.querySelector('.notification');
         if(n) n.remove();
@@ -828,47 +875,9 @@
         setTimeout(() => div.remove(), 2500);
     }
     
-    // Функция для получения SHA текущего файла (нужен для обновления)
-    async function getCurrentFileSha() {
-        if(!GITHUB_REPO || !GITHUB_TOKEN) return null;
-        
-        try {
-            const response = await fetch(
-                `https://api.github.com/repos/${GITHUB_REPO}/contents/${DATA_FILE_PATH}`,
-                {
-                    method: "GET",
-                    headers: {
-                        "Authorization": `Bearer ${GITHUB_TOKEN}`,
-                        "Accept": "application/vnd.github+json"
-                    }
-                }
-            );
-            
-            if(response.status === 404) return null;
-            if(!response.ok) throw new Error(`Ошибка: ${response.statusText}`);
-            
-            const data = await response.json();
-            return data.sha;
-        } catch(err) {
-            console.error("Ошибка получения SHA:", err);
-            return null;
-        }
-    }
-    
-    // Функция для кодирования UTF-8 в base64
-    function utf8ToBase64(str) {
-        return btoa(unescape(encodeURIComponent(str)));
-    }
-    
-    // Функция для декодирования base64 в UTF-8
-    function base64ToUtf8(str) {
-        return decodeURIComponent(escape(atob(str)));
-    }
-    
-    // Отправка данных в GitHub
     async function uploadToGitHub() {
         if(!GITHUB_REPO || !GITHUB_TOKEN) {
-            showNotif('⚠️ Сначала настройте GitHub репозиторий и токен в админ-панели', true);
+            showNotif('⚠️ Сначала настройте GitHub репозиторий и токен', true);
             return false;
         }
         
@@ -876,95 +885,86 @@
             products: products,
             siteTexts: siteTexts,
             siteImages: siteImages,
+            siteFont: currentFont,
+            sitePadding: currentPadding,
             version: Date.now(),
             lastUpdated: new Date().toISOString()
         };
         
         try {
             showNotif('🔄 Отправка в GitHub...');
-            
-            const content = utf8ToBase64(JSON.stringify(fullData, null, 2));
-            const currentSha = await getCurrentFileSha();
-            
-            const requestBody = {
-                message: `Обновление данных сайта ${new Date().toLocaleString()}`,
-                content: content,
-                sha: currentSha
-            };
-            
-            const response = await fetch(
-                `https://api.github.com/repos/${GITHUB_REPO}/contents/${DATA_FILE_PATH}`,
-                {
-                    method: "PUT",
-                    headers: {
-                        "Authorization": `Bearer ${GITHUB_TOKEN}`,
-                        "Accept": "application/vnd.github+json",
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(requestBody)
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(fullData, null, 2))));
+            let sha = null;
+            try {
+                const getRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${DATA_FILE_PATH}`, {
+                    headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}` }
+                });
+                if(getRes.ok) {
+                    const fileData = await getRes.json();
+                    sha = fileData.sha;
                 }
-            );
+            } catch(e) {}
             
-            if(!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'Ошибка отправки');
-            }
+            const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${DATA_FILE_PATH}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: `Обновление данных ${new Date().toLocaleString()}`,
+                    content: content,
+                    sha: sha
+                })
+            });
             
-            showNotif('✅ Данные отправлены в GitHub!');
-            if(document.getElementById('syncStatus')) {
-                document.getElementById('syncStatus').innerHTML = '✅ Отправлено в GitHub!';
-                document.getElementById('syncStatus').className = 'sync-status success';
-                setTimeout(() => { if(document.getElementById('syncStatus')) document.getElementById('syncStatus').innerHTML = ''; }, 3000);
+            if(response.ok) {
+                showNotif('✅ Данные отправлены в GitHub!');
+                const statusDiv = document.getElementById('syncStatus');
+                if(statusDiv) {
+                    statusDiv.innerHTML = '✅ Отправлено в GitHub!';
+                    statusDiv.className = 'sync-status success';
+                    setTimeout(() => { if(statusDiv) statusDiv.innerHTML = ''; }, 3000);
+                }
+                return true;
+            } else {
+                throw new Error('Ошибка отправки');
             }
-            return true;
         } catch(error) {
-            console.error('Ошибка:', error);
+            console.error(error);
             showNotif('❌ Ошибка отправки: ' + error.message, true);
-            if(document.getElementById('syncStatus')) {
-                document.getElementById('syncStatus').innerHTML = '❌ Ошибка: ' + error.message;
-                document.getElementById('syncStatus').className = 'sync-status error';
-            }
             return false;
         }
     }
     
-    // Загрузка данных из GitHub
     async function downloadFromGitHub() {
         if(!GITHUB_REPO || !GITHUB_TOKEN) {
-            showNotif('⚠️ Сначала настройте GitHub репозиторий и токен в админ-панели', true);
+            showNotif('⚠️ Сначала настройте GitHub репозиторий и токен', true);
             return false;
         }
         
         try {
             showNotif('🔄 Загрузка из GitHub...');
-            
-            const response = await fetch(
-                `https://api.github.com/repos/${GITHUB_REPO}/contents/${DATA_FILE_PATH}`,
-                {
-                    method: "GET",
-                    headers: {
-                        "Authorization": `Bearer ${GITHUB_TOKEN}`,
-                        "Accept": "application/vnd.github+json"
-                    }
-                }
-            );
+            const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${DATA_FILE_PATH}`, {
+                headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}` }
+            });
             
             if(response.status === 404) {
                 showNotif('Файл данных не найден. Сначала отправьте данные в GitHub.', true);
                 return false;
             }
-            
-            if(!response.ok) throw new Error(`Ошибка: ${response.statusText}`);
+            if(!response.ok) throw new Error('Ошибка загрузки');
             
             const data = await response.json();
-            const content = base64ToUtf8(data.content);
+            const content = decodeURIComponent(escape(atob(data.content)));
             const cloudData = JSON.parse(content);
             
             if(cloudData.products) products = cloudData.products;
             if(cloudData.siteTexts) Object.assign(siteTexts, cloudData.siteTexts);
             if(cloudData.siteImages) Object.assign(siteImages, cloudData.siteImages);
+            if(cloudData.siteFont) applyFont(cloudData.siteFont);
+            if(cloudData.sitePadding) applyPadding(cloudData.sitePadding);
             
-            // Сохраняем в localStorage
             localStorage.setItem('kartini_products', JSON.stringify(products));
             localStorage.setItem('kartini_texts', JSON.stringify(siteTexts));
             localStorage.setItem('kartini_images', JSON.stringify(siteImages));
@@ -975,14 +975,9 @@
             renderProductGrid('printsGrid', 'print');
             
             showNotif('✅ Данные загружены из GitHub!');
-            if(document.getElementById('syncStatus')) {
-                document.getElementById('syncStatus').innerHTML = '✅ Загружено из GitHub!';
-                document.getElementById('syncStatus').className = 'sync-status success';
-                setTimeout(() => { if(document.getElementById('syncStatus')) document.getElementById('syncStatus').innerHTML = ''; }, 3000);
-            }
             return true;
         } catch(error) {
-            console.error('Ошибка:', error);
+            console.error(error);
             showNotif('❌ Ошибка загрузки: ' + error.message, true);
             return false;
         }
@@ -991,21 +986,19 @@
     function saveGitHubSettings() {
         const repo = document.getElementById('githubRepo').value.trim();
         const token = document.getElementById('githubToken').value.trim();
-        
         if(repo && token) {
             GITHUB_REPO = repo;
             GITHUB_TOKEN = token;
             localStorage.setItem('github_repo', repo);
             localStorage.setItem('github_token', token);
             showNotif('✅ Настройки GitHub сохранены');
-            // Пробуем загрузить данные
             setTimeout(() => downloadFromGitHub(), 500);
         } else {
             showNotif('❌ Заполните оба поля', true);
         }
     }
     
-    // ===== ОСТАЛЬНЫЕ ФУНКЦИИ =====
+    // Остальные функции
     function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
     
     function applyImages() {
@@ -1174,9 +1167,7 @@
     
     async function addNewProduct(type, title, price, desc, imageFile) {
         if(!title || !price) { showNotif('❌ Заполните название и цену'); return false; }
-        
         const newId = Date.now();
-        
         const finishAdd = async (imgUrl) => {
             const images = imgUrl ? [imgUrl] : ["https://placehold.co/800x1000/f5f0eb/b97f44?text=" + encodeURIComponent(title)];
             const newProduct = { id: newId, title, price: parseInt(price), desc, type, images, mainImageIndex: 0 };
@@ -1186,7 +1177,6 @@
             renderProductGrid('shopGrid', 'original');
             renderProductGrid('printsGrid', 'print');
         };
-        
         if(imageFile && imageFile.size > 0) {
             if(imageFile.size > 5 * 1024 * 1024) {
                 showNotif('Файл слишком большой! Максимум 5 МБ');
@@ -1249,36 +1239,9 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     
-    // Шрифты
-    const fonts = {
-        modern: { main: "'Inter', sans-serif", heading: "'Inter', sans-serif" },
-        elegant: { main: "'Playfair Display', serif", heading: "'Playfair Display', serif" },
-        handwritten: { main: "'Caveat', cursive", heading: "'Caveat', cursive" },
-        strict: { main: "'Montserrat', sans-serif", heading: "'Montserrat', sans-serif" },
-        airy: { main: "'Josefin Sans', sans-serif", heading: "'Josefin Sans', sans-serif" }
-    };
-    
-    let currentFont = localStorage.getItem('siteFont') || 'modern';
-    let currentPadding = parseInt(localStorage.getItem('sitePadding')) || 24;
-    
-    function applyFont(fontName) {
-        document.documentElement.style.setProperty('--main-font', fonts[fontName].main);
-        document.documentElement.style.setProperty('--heading-font', fonts[fontName].heading);
-        localStorage.setItem('siteFont', fontName);
-    }
-    
-    function applyPadding(padding) {
-        document.documentElement.style.setProperty('--container-padding', padding + 'px');
-        localStorage.setItem('sitePadding', padding);
-        currentPadding = padding;
-        document.getElementById('paddingValue').innerText = padding + 'px';
-        document.getElementById('paddingSlider').value = padding;
-    }
-    
     applyFont(currentFont);
     applyPadding(currentPadding);
     
-    // Загружаем сохранённые данные из localStorage
     function loadLocalData() {
         const savedProducts = localStorage.getItem('kartini_products');
         if(savedProducts) { try { products = JSON.parse(savedProducts); } catch(e) {} }
@@ -1314,10 +1277,16 @@
     const adminLoginBtn = document.getElementById('adminLoginBtn');
     const loginModal = document.getElementById('loginModal');
     const adminPanelModal = document.getElementById('adminPanelModal');
+    const styleSettingsModal = document.getElementById('styleSettingsModal');
     const submitLogin = document.getElementById('submitLogin');
     const closeModal = document.getElementById('closeModal');
     const closeAdminModal = document.getElementById('closeAdminModal');
     const closeAdminPanelBtn = document.getElementById('closeAdminPanelBtn');
+    const closeAdminPanelModalBtn = document.getElementById('closeAdminPanelModalBtn');
+    const closeProductModalBtn = document.getElementById('closeProductModalBtn');
+    const closeTextModalBtn = document.getElementById('closeTextModalBtn');
+    const closeStyleSettingsModalBtn = document.getElementById('closeStyleSettingsModalBtn');
+    const closeStyleSettingsBtn = document.getElementById('closeStyleSettingsBtn');
     const closeProductModal = document.getElementById('closeProductModal');
     const closeTextModal = document.getElementById('closeTextModal');
     const lightboxModal = document.getElementById('lightboxModal');
@@ -1332,8 +1301,22 @@
     
     adminLoginBtn.onclick = () => loginModal.classList.add('active');
     closeModal.onclick = () => loginModal.classList.remove('active');
-    closeProductModal.onclick = () => document.getElementById('editProductModal').classList.remove('active');
-    closeTextModal.onclick = () => document.getElementById('editTextModal').classList.remove('active');
+    
+    // Закрытие окон
+    const closeAdminPanel = () => adminPanelModal.classList.remove('active');
+    const closeStyleSettings = () => styleSettingsModal.classList.remove('active');
+    const closeEditProduct = () => document.getElementById('editProductModal').classList.remove('active');
+    const closeEditText = () => document.getElementById('editTextModal').classList.remove('active');
+    
+    if(closeAdminModal) closeAdminModal.onclick = closeAdminPanel;
+    if(closeAdminPanelBtn) closeAdminPanelBtn.onclick = closeAdminPanel;
+    if(closeAdminPanelModalBtn) closeAdminPanelModalBtn.onclick = closeAdminPanel;
+    if(closeProductModalBtn) closeProductModalBtn.onclick = closeEditProduct;
+    if(closeProductModal) closeProductModal.onclick = closeEditProduct;
+    if(closeTextModalBtn) closeTextModalBtn.onclick = closeEditText;
+    if(closeTextModal) closeTextModal.onclick = closeEditText;
+    if(closeStyleSettingsModalBtn) closeStyleSettingsModalBtn.onclick = closeStyleSettings;
+    if(closeStyleSettingsBtn) closeStyleSettingsBtn.onclick = closeStyleSettings;
     lightboxCloseBtn.onclick = () => lightboxModal.classList.remove('active');
     saveProductBtn.onclick = saveProductEdit;
     saveTextBtn.onclick = saveTextEdit;
@@ -1341,18 +1324,29 @@
     nextImgBtn.onclick = nextImage;
     deleteFromLightboxBtn.onclick = deleteCurrentImage;
     
-    closeAdminModal.onclick = () => adminPanelModal.classList.remove('active');
-    closeAdminPanelBtn.onclick = () => adminPanelModal.classList.remove('active');
-    
+    // Выбор шрифта
     document.querySelectorAll('.style-preview').forEach(el => {
         el.onclick = () => {
-            applyFont(el.dataset.font);
-            showNotif(`Шрифт изменён`);
+            const font = el.dataset.font;
+            applyFont(font);
+            showNotif(`Шрифт изменён на ${el.querySelector('strong').innerText}`);
+            uploadToGitHub(); // сохраняем в облако
         };
     });
     
-    paddingSlider.oninput = () => { document.getElementById('paddingValue').innerText = paddingSlider.value + 'px'; };
-    applyPaddingBtn.onclick = () => { applyPadding(parseInt(paddingSlider.value)); showNotif(`Отступы изменены на ${paddingSlider.value}px`); };
+    if(paddingSlider) {
+        paddingSlider.oninput = () => {
+            const paddingSpan = document.getElementById('paddingValue');
+            if(paddingSpan) paddingSpan.innerText = paddingSlider.value + 'px';
+        };
+    }
+    if(applyPaddingBtn) {
+        applyPaddingBtn.onclick = () => {
+            applyPadding(parseInt(paddingSlider.value));
+            showNotif(`Отступы изменены на ${paddingSlider.value}px`);
+            uploadToGitHub(); // сохраняем в облако
+        };
+    }
     
     // Облачные кнопки
     const saveGitHubSettingsBtn = document.getElementById('saveGitHubSettingsBtn');
@@ -1392,14 +1386,22 @@
             renderProductGrid('printsGrid', 'print');
             adminPanelModal.classList.add('active');
             
-            // Загружаем настройки GitHub
             if(GITHUB_REPO) document.getElementById('githubRepo').value = GITHUB_REPO;
             if(GITHUB_TOKEN) document.getElementById('githubToken').value = GITHUB_TOKEN;
             
-            // Пытаемся загрузить данные из GitHub
             setTimeout(() => downloadFromGitHub(), 500);
         } else { showNotif('Неверный пароль!'); }
     };
+    
+    // Кнопка открытия настроек стиля (добавляем в админ-панель)
+    const styleSettingsBtn = document.createElement('button');
+    styleSettingsBtn.innerHTML = '🎨 Настройки стиля (шрифты, отступы)';
+    styleSettingsBtn.style.cssText = 'background:#b97f44; color:white; border:none; padding:10px; margin-top:15px; width:100%; cursor:pointer; border-radius:4px;';
+    styleSettingsBtn.onclick = () => styleSettingsModal.classList.add('active');
+    const adminPanelContent = document.querySelector('#adminPanelModal .modal-content');
+    if(adminPanelContent) {
+        adminPanelContent.appendChild(styleSettingsBtn);
+    }
     
     document.getElementById('addShopProductBtn')?.addEventListener('click', () => {
         addNewProduct('original', 
